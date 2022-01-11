@@ -1,0 +1,708 @@
+---
+title: "Statistical Calculation and Software"
+author: "Assignment 1"
+date: "Hanbin Liu 11912410"
+output:
+  #html_document
+  pdf_document:
+    keep_tex: true
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = TRUE, warning = FALSE)
+setwd("C:/Users/HP/Desktop/R_project/R_assignments")
+library(ggplot2)
+library(dplyr)
+library(hrbrthemes)
+```
+
+## 1.1
+### (a)
+```{r}
+data('iris')
+```
+
+```{r}
+Species <- factor(iris$Species, labels = c("a", "b", "c"))
+iris <- data.frame(iris[, 1:4], Species)
+table(iris$Species)
+```
+
+### (b)
+```{r collapse=TRUE}
+ggplot(iris, aes(x = Species, y = Sepal.Length)) +
+  geom_boxplot(fill = "darkgreen") +
+  ggtitle("Sepal length distribution for each type of irises") +
+  theme(plot.title = element_text(hjust = 0.5),
+        text = element_text(size = 14, family = "serif"))
+```
+
+### (c)
+```{r}
+ind <- which(iris["Sepal.Length"] > 5.5)
+iris_ed <- iris[ind,]
+
+length <- iris_ed$Petal.Length
+width <- iris_ed$Petal.Width
+value <- c(length, width)
+group <-
+  c(rep('Petal.Length', length(width)), rep('Petal.width', length(width)))
+species <- c(iris_ed$Species, iris_ed$Species)
+data <- data.frame(species, group, value)
+
+ggplot(data, aes(x = species, y = value, fill = group)) +
+  geom_boxplot() + xlab("Species") + ylab("Value") +
+  theme(legend.position = "top",
+        text = element_text(size = 14, family = "serif"))
+```
+
+## 1.2
+```{r}
+F2000 <- read.csv("F2000.csv")
+```
+
+### (a)&(b)
+```{r}
+skewness <- function(x) {
+  xixi <- x - mean(x)
+  skewness <- sum(xixi ^ 3) / ((length(x) - 1) * var(x) ^ 1.5)
+  return(skewness)
+}
+
+x <- F2000[, "marketvalue"]
+skewness(x)
+skewness(log(x))
+skewness(1 - x ^ -1)
+skewness((x ^ 0.25 - 1) / 0.25)
+```
+
+### (c)
+```{r fig.height=10, fig.width=20, warning=FALSE}
+library(patchwork)
+p1 <- ggplot(F2000, aes(x = marketvalue)) +
+  geom_histogram(binwidth = 10,
+                 fill = "#000000",
+                 color = "#e9ecef") +
+  ggtitle("Histogram of marketvalue") +
+  theme(plot.title = element_text(hjust = 0.5),
+        text = element_text(size = 14, family = "serif")) +
+  xlab(expression(italic(x)))
+
+p2 <- ggplot(F2000, aes(x = log(marketvalue))) +
+  geom_histogram(
+    binwidth = 0.5,
+    fill = "#3E432E",
+    color = "#e9ecef",
+    alpha = 0.8
+  ) +
+  ggtitle("Histogram of log-transformed marketvalue") +
+  theme(plot.title = element_text(hjust = 0.5),
+        text = element_text(size = 14, family = "serif")) +
+  xlab(expression(italic(log(x))))
+
+p3 <- ggplot(F2000, aes(x = 1 - (marketvalue) ^ -1)) +
+  geom_histogram(binwidth = 0.1,
+                 fill = "#616F69",
+                 color = "#e9ecef") +
+  ggtitle("Histogram of inverse-transformed marketvalue") +
+  theme(plot.title = element_text(hjust = 0.5),
+        text = element_text(size = 14, family = "serif")) +
+  xlim(c(-10, 1)) +
+  xlab(expression(italic(frac(x ^ -1 - 1,-1))))
+
+p4 <- ggplot(F2000, aes(x = marketvalue ^ 0.25 - 1)) +
+  geom_histogram(binwidth = 0.1,
+                 fill = "#A7D129",
+                 color = "#e9ecef") +
+  ggtitle(expression(paste('Histogram with ', italic(lambda), " = 0.25"))) +
+  theme(plot.title = element_text(hjust = 0.5),
+        text = element_text(size = 14, family = "serif")) +
+  xlab(expression(italic(frac(x ^ 0.25 - 1, 0.25))))
+
+p1 + p2 + p3 + p4
+```
+
+### (d)
+```{r}
+ind <- which(is.na(F2000[, "profits"]))
+F2000[, "name"][ind]
+fivenum(F2000[, "sales"][ind])
+```
+
+### (e)
+```{r}
+# number of different countries
+length(table(F2000$country))
+
+xixi <- data.frame(table(F2000$country))
+mean <- 1:61
+median <- mean
+for (i in 1:61) {
+  ind <- which(F2000$country == xixi[i, 1])
+  mean[i] <- mean(F2000[ind,]$assets)
+  median[i] <- median(F2000[ind,]$assets)
+}
+
+countries <-
+  data.frame(
+    country = xixi[, 1],
+    num_of_companies = xixi[, 2],
+    mean_assets = mean,
+    median_assets = median
+  )
+write.table(countries, file = "countries.txt")
+```
+
+### (f)
+```{r}
+# 2 ways
+way_1 <- F2000[F2000$sales > 100,]
+way_2 <- F2000[which(F2000$sales > 100),]
+# sort
+selected_data <- way_1[-c(3, 4, 8)]
+ind_1 <- order(selected_data$sales, decreasing = TRUE)
+selected_data[ind_1,]
+ind_2 <- order(selected_data$assets)
+selected_data[ind_2,]
+# plot
+ggplot(selected_data, aes(x = assets, y = profits)) +
+  geom_point(color = "blue") +
+  ggtitle("Scatter plot") +
+  theme(plot.title = element_text(hjust = 0.5),
+        text = element_text(size = 14, family = "serif")) +
+  xlab("Assets") +
+  ylab("Profits")
+```
+
+### (g)
+- method 1(my function)
+```{r}
+myKNN <-
+  function(data, train_col, pred_col, k, scale, M) {
+    #scale: scale() or min-max; M: mean or median
+    X <- data[, train_col]
+    if (scale == "min-max") {
+      # min-max normalization
+      min <- apply(X, 2, min)
+      max <- apply(X, 2, max)
+      MIN <- matrix(rep(min, nrow(X)), ncol = length(min), byrow = T)
+      MAX <- matrix(rep(max, nrow(X)), ncol = length(max), byrow = T)
+      X <- (X - MIN) / (MAX - MIN)
+    } else if (scale == "scale") {
+      X <- scale(X)
+    }
+    # find index of missing value
+    ind <- which(is.na(data[, pred_col]))
+    # index of training samples
+    train_id <- setdiff(1:nrow(X), ind)
+    # operation w.r.t sample p
+    for (p in ind) {
+      dist <- replicate(nrow(X),-1)
+      for (i in train_id) {
+        temp <- 0
+        for (j in 1:length(train_col)) {
+          temp <- temp + (X[i, train_col[j]] - X[p, train_col[j]]) ^ 2
+        }
+        dist[i] <- sqrt(temp)
+      }
+      # select k neighbors w.r.t sample p
+      selid <- which(dist %in% sort(dist[dist >= 0])[1:k])
+      # mean of k neighbors on pred_col    #or median or mode
+      if (M == "mean") {
+        data[p, pred_col] <- mean(data[selid, pred_col])
+      } else if (M == "median") {
+        data[p, pred_col] <- median(data[selid, pred_col])
+      }
+    }
+    # show
+    result <- data.frame(data[ind,-c(4, 5, 7, 8)])
+    return(result)
+  }
+```
+```{r}
+myKNN(F2000,
+      c("sales", "assets", "marketvalue"),
+      "profits",
+      10,
+      "scale",
+      "mean")
+myKNN(F2000,
+      c("sales", "assets", "marketvalue"),
+      "profits",
+      10,
+      "min-max",
+      "mean")
+myKNN(F2000,
+      c("sales", "assets", "marketvalue"),
+      "profits",
+      10,
+      "scale",
+      "median")
+myKNN(F2000,
+      c("sales", "assets", "marketvalue"),
+      "profits",
+      10,
+      "min-max",
+      "median")
+```
+
+- method 2(use package)
+```{r warning=FALSE}
+library(caret)
+library(RANN)
+library(lattice)
+# save mean and sd for de-scaling
+train_col <-
+  c("sales", "assets", "marketvalue")
+pred_col <- "profits"
+ind <- which(is.na(F2000[, pred_col]))
+mean <- mean(F2000[setdiff(1:nrow(F2000), ind), pred_col])
+sd <- sd(F2000[setdiff(1:nrow(F2000), ind), pred_col])
+# knn imputation
+model <-
+  preProcess(F2000[, c(train_col, pred_col)], method = "knnImpute", k = 10)
+prediction <- predict(model, F2000)
+# de-scaling
+prediction[, pred_col] <- mean + sd * prediction[, pred_col]
+# show
+result <- data.frame(prediction[ind,-c(4, 5, 7, 8)])
+result
+```
+
+## 1.3
+### (a)
+```{r}
+ggplot(data.frame(x = c(0, 8)), aes(x = x)) +
+  ggtitle("Density of Chi-squared distribution") +
+  stat_function(fun = dchisq,
+                args = list(df = 4),
+                aes(colour = "freedom = 4")) +
+  stat_function(fun = dchisq,
+                args = list(df = 6),
+                aes(colour = "freedom = 6")) +
+  scale_colour_brewer(palette = "Accent") +
+  theme(
+    plot.title = element_text(hjust = 0.5),
+    legend.position = "top",
+    text = element_text(size = 14, family = "serif")
+  ) +
+  labs(colour = "") +
+  xlab(expression(italic(x))) +
+  ylab(expression(italic(f(x))))
+```
+```{r}
+s1 <- pchisq(7, df = 5) - pchisq(1, df = 5)
+s1
+s2 <- 1 - pchisq(3, df = 5)
+s2
+```
+
+### (b)
+The cdf of $X$ is given by 
+\begin{equation*}
+F(x) = \int_0^x \lambda e^{-\lambda t} dt = 1 - e^{-\lambda x}.
+\end{equation*}
+Then, $F(1) = 1-e^{-\lambda},$ $F(6) = 1 - e^{-6\lambda}.$
+```{r}
+lambda <- -log(0.8)
+F6 <- 1 - 0.8 ^ 6
+sprintf('lambda:   %f', lambda)
+sprintf('Pr(X<=6): %f', F6)
+```
+
+### (c)
+$X_i \sim U(0,1).$ Let $Y = X_1+2X_2, Z = X_1,$ then$\frac{\partial(x_1,x_2)}{\partial(y,z)}$ = 
+$$
+\begin{vmatrix}
+0 & 1\\
+\frac{1}{2} & \frac{-1}{2} 
+\end{vmatrix}$$
+= $\frac{-1}{2}.$
+Then, $f_{Y,Z}(y,z) = \int_0^1 \int_0^1  f_{X_1,X_2}(x_1,x_2)\cdot \frac{1}{2}dx_1dx_2 = \frac{1}{2}, \quad z\leq y \leq z+2,\ 0\leq z \leq 1$
+Hence, if $y<0,$ then $f_Y(y) = 0;$ if $0\leq y < 1,$ then$f_Y(y) = \int_0^y \frac{1}{2}dz = \frac{y}{2};$ if $1 \leq y < 2,$ then$f_Y(y) = \int_0^1 \frac{1}{2} dz = \frac{1}{2};$ if $ 2\leq y <3,$ then$f_Y(y) = \int_{y-2}^1 \frac{1}{2} dz = \frac{3-y}{2};$ if$y \geq 3,$ then$f_Y(y) = 0.$ Therefore, the pdf of $Y$ is given by
+\begin{equation}
+f_Y(y)=
+\begin{cases}
+0           & y < 0, \\
+\frac{y}{2} & 0 \leq y < 1, \\
+\frac{1}{2} & 1 \leq y < 2,\\
+\frac{3-y}{2} & 2 \leq y < 3, \\
+0           & y \geq 3.
+\end{cases}
+\end{equation}
+```{r}
+x <- c(-1, 0, 1, 2, 3, 4)
+y <- c(0, 0, 0.5, 0.5, 0, 0)
+ggplot(data.frame(x, y), aes(x = x, y = y)) +
+  geom_line(colour = 'thistle') +
+  ggtitle(expression(paste("Density of ", italic(Y)))) +
+  theme(plot.title = element_text(hjust = 0.5),
+        text = element_text(size = 14, family = "serif")) +
+  ylab(expression(italic(f(y)))) +
+  xlab(expression(italic(y)))
+```
+
+### (d)
+```{r}
+ggplot(data.frame(x = c(-4, 4)), aes(x = x)) +
+  ggtitle(expression(
+    paste(
+      "Density of standard normal distribution and ",
+      italic(t),
+      "-distribution"
+    )
+  )) +
+  stat_function(fun = dnorm,
+                args = list(0, 1),
+                aes(colour = "standard normal")) +
+  stat_function(fun = dt,
+                args = list(1),
+                aes(colour = "t(1) distribution")) +
+  scale_colour_brewer(palette = "Accent") +
+  theme(
+    plot.title = element_text(hjust = 0.5),
+    legend.position = "top",
+    text = element_text(size = 14, family = "serif")
+  ) +
+  labs(colour = "") +
+  xlab(expression(italic(x))) +
+  ylab(expression(italic(f(x))))
+```
+
+$t(1)$ distribution's tail is heavy.
+
+### (e)
+Note that
+\begin{equation*}
+  1 = \sum_{x=0}^{{\rm min}\{m,n\}} {\rm Pr}(X=x) = \sum_{x=0}^{{\rm min}\{m,n\}} \frac{\binom{m}{x} \binom{N-m}{n-x}}{\binom{N}{n}}.
+\end{equation*}
+That is,
+\begin{equation*}
+  \sum_{x=0}^{{\rm min}\{m,n\}} \binom{m}{x} \binom{N-m}{n-x} = \binom{N}{n}.
+\end{equation*}
+The expectation of $X$ is given by 
+\begin{equation*}
+  E(X) = \sum_{x=0}^{{\rm min}\{m,n\}} x{\rm Pr}(X=x) = \frac{1}{\binom{N}{n}} \sum_{x=1}^{{\rm min}\{m,n\}} x \binom{m}{x} \binom{N-m}{n-x}.
+\end{equation*}
+Using $x\binom{m}{x} = m\binom{m-1}{x-1},$ we have 
+\begin{equation*}
+  \begin{aligned}
+    E(X) &= \frac{1}{\binom{N}{n}} \sum_{t=0}^{{\rm min}\{m-1,n-1\}} m\binom{m-1}{t} \binom{(N-1)-(m-1)}{(n-1)-t} \quad (t = x-1)\\
+         &= \frac{m}{\binom{N}{n}} \sum_{t=0}^{{\rm min}\{m-1,n-1\}} \binom{m-1}{t} \binom{(N-1)-(m-1)}{(n-1)-t}\\
+         &= \frac{m}{\binom{N}{n}} \binom{N-1}{n-1}\\
+         &= \frac{mn}{N}.
+  \end{aligned}
+\end{equation*}
+Similarly, using $x^2 = x(x-1) + x$ and the same skill, we can obtain that $E(X^2) = \frac{mn}{N} + \frac{mn(m-1)(n-1)}{N(N-1)}$. Then 
+\begin{equation*}
+  {\rm Var}(X) = E(X^2) - (EX)^2 = \frac{mn(N-m)(N-n)}{N^2(N-1)}.
+\end{equation*}
+```{r}
+p <- replicate(9, 0)
+name <- p
+E <- 0
+E2 <- 0
+for (k in 0:8) {
+  name[k + 1] <- paste("Pr(X = ", k, ")", sep = "")
+  p[k + 1] <- (choose(28, k) * choose(17, 8 - k)) / choose(45, 8)
+  E <- E + k * p[k + 1]
+  E2 <- E2 + k ^ 2 * p[k + 1]
+}
+table <- data.frame(name, p)
+table
+Var <- E2 - E ^ 2
+paste("Expectation:", E)
+paste("Variation:  ", Var)
+```
+
+### (f)
+${\rm Pr}(X > 8) \leq 0.4$ is equivalent to $\sum_{k=0}^8{\rm Pr}(X = k) \geq 0.6.$
+```{r}
+f <- function(lambda) {
+  sum(dpois(0:8, lambda)) - 0.6
+}
+if (f(1) > 0 && f(10) < 0) {
+  lambda <- uniroot(f, lower = 1, upper = 10)[[1]]
+  lambda
+}
+```
+
+### (g)
+```{r}
+x <- seq(0, 5, 0.1)
+y <- dgamma(x, 1, 3)
+ggplot(data.frame(x, y), aes(x = x, y = y)) +
+  geom_point(color = 'purple') +
+  stat_function(fun = dexp,
+                args = list(3),
+                aes(colour = "Exponential(3)")) +
+  ggtitle("Density of Exponential(3) and Gamma(1, 3) distributions") +
+  scale_colour_brewer(palette = "Accent") +
+  theme(
+    plot.title = element_text(hjust = 0.5),
+    legend.position = "top",
+    text = element_text(size = 14, family = "serif")
+  ) +
+  labs(colour = "") +
+  xlab(expression(italic(x))) +
+  ylab(expression(italic(f(x)))) 
+# Purple points are generated from Gamma(1, 3) distribution
+```
+
+### (h)
+```{r}
+prob <-
+  pretty(0:1, 20)
+prob[21] <-
+  1  # 1 - prob[21] = -2.220446e-16 without this assignment
+size <- replicate(21, 0)
+for (i in 1:21) {
+  n <- 1
+  p <- 1
+  while (p > 1 - prob[i]) {
+    n <- n + 1
+    p <- p * (365 - n + 1) / 365
+  }
+  size[i] <- n
+}
+result <- data.frame(size, prob)
+result
+```
+
+### (i)
+- method 1 (visualization)
+```{r}
+myplot <- function(n, prob) {
+  times <- 10000
+  x <- rbinom(times, n, prob)
+  z <- (x - n * prob) / (sqrt(n * prob * (1 - prob)))
+  p <- ggplot(data.frame(value = z), aes(x = value)) +
+    stat_function(fun = dnorm, aes(colour = 'Standard normal distribution')) +
+    geom_bar(aes(y = ..count.. / (sqrt(2 * pi) * max(..count..)) , colour = 'Zn')) +
+    scale_colour_brewer(palette = "Accent") +
+    theme(
+      plot.title = element_text(hjust = 0.5),
+      legend.position = "top",
+      text = element_text(size = 14, family = "serif")
+    ) +
+    labs(colour = "") +
+    xlab(expression(italic(x))) +
+    ylab(expression(italic(f(x))))
+  return(p)
+}
+```
+```{r}
+prob <- runif(1, min = 0, max = 1)
+myplot(10, prob)
+myplot(100, prob)
+```
+
+- method 2 (calculate) - a and b not fixed
+```{r}
+# simulation times of Zn
+times <- 5000
+# randomly choose p
+p <- runif(1, min = 0, max = 1)
+# calculate Pr(a < Zn <= b) for n = 10, 100, 1000, 10000
+simulation <-
+  rep(0, 4)
+true <- rep(0, 4)
+a <- rep(0, 4)
+b <- rep(0, 4)
+for (n in c(10, 100, 1000, 10000)) {
+  x <- rbinom(times, n, p)
+  z <- (x - n * p) / (sqrt(n * p * (1 - p)))
+  # randomly choose a and b among the range of z
+  nums <- runif(2, min = min(z), max = max(z))
+  a[log10(n)] <- min(nums)
+  b[log10(n)] <- max(nums)
+  simulation[log10(n)] <-
+    length(z[z > a[log10(n)] & z <= b[log10(n)]]) / length(z)
+  # value of integral
+  true[log10(n)] <- pnorm(b[log10(n)]) - pnorm(a[log10(n)])
+}
+# show
+n <- c(10, 100, 1000, 10000)
+comparision <- data.frame(n, a, b, simulation, true)
+comparision
+```
+
+-- a and b fixed
+```{r}
+a <- -1
+b <- 1
+times <- 5000
+p <- runif(1, min = 0, max = 1)
+simulation <- rep(0, 4)
+true <- rep(0, 4)
+for (n in c(10, 100, 1000, 10000)) {
+  x <- rbinom(times, n, p)
+  z <- (x - n * p) / (sqrt(n * p * (1 - p)))
+  simulation[log10(n)] <- length(z[z > a & z <= b]) / length(z)
+  true[log10(n)] <- pnorm(b) - pnorm(a)
+}
+# show
+n <- c(10, 100, 1000, 10000)
+comparision <- data.frame(n, a, b, simulation, true)
+comparision
+```
+
+### (j)
+- method 1 
+```{r}
+# lambda: lambda; times: times of the generation of Sn for each n; K: k = 1,...,K
+poissonlimit <- function(lambda, times, K) {
+  simulation <- matrix(rep(0, 5 * K), 5, K)
+  
+  for (n in c(10, 100, 1000, 10000)) {
+    sn <- rbinom(times, n, lambda / n)
+    for (k in 1:K) {
+      simulation[log10(n), k] <- length(sn[sn == k]) / length(sn)
+    }
+  }
+  # show
+  result <- data.frame(c(10, 100, 1000, 10000, "true"), simulation)
+  colnames(result) <- c("n\\k", 1:9)
+  result[5, 2:10] <- dpois(1:9, lambda)
+  return(result)
+}
+```
+```{r}
+poissonlimit(3, 5000, 9)
+poissonlimit(5, 5000, 9)
+poissonlimit(7, 5000, 9)
+poissonlimit(9, 5000, 9)
+```
+
+- method 2 (visualization)
+```{r}
+pois_binom <- function(lambda, n) {
+  p <- lambda / n
+  x <- 1:20
+  y_pois <- dpois(x, lambda)
+  y_binom <- dbinom(x, n, p)
+  pp <- ggplot(data.frame(x, y_pois, y_binom)) +
+    geom_bar(aes(x = x, y = y_pois), stat = 'identity') +
+    geom_point(aes(x = x, y = y_binom), col = '#A4D65E', size = 2) +
+    ggtitle("Bar for Poission & Points for Binomial") +
+    theme(
+      plot.title = element_text(hjust = 0.5),
+      legend.position = "top",
+      text = element_text(size = 14, family = "serif")
+    ) +
+    xlab(expression(italic(x))) +
+    ylab(expression(italic(p(x))))
+  return(pp)
+}
+```
+```{r}
+pois_binom(3, 10)
+pois_binom(3, 100)
+pois_binom(3, 1000)
+##
+pois_binom(9, 1000)
+```
+
+### (k)
+Note that in $R,$ the geometric distribution with $prob = p$ has density 
+\begin{equation*}
+p(x) = p(1-p)^x,
+\end{equation*}
+for $x = 0, 1, 2, 3, ...,$ which is different from what we tipically learned in class: 
+\begin{equation*}
+p(x) = p(1-p)^{x-1},
+\end{equation*}
+for $x = 1,2,3,....$ Therefore, we should use $pgeom(m + n + 1)$ instead of $pgeom(m + n)$ for geometric distribution.
+
+- method 1 (cdf method)
+```{r}
+# p: p or lambda; type: geometric or poisson
+memoryless_1 <- function(m, n, p, type) {
+  if (type == 'Geometric') {
+    if (round((1 - pgeom(m + n + 1, p)), 4) == round(((1 - pgeom(m, p)) *
+                                                      (1 - pgeom(n, p))), 4)) {
+      print('Geometric  distribution has memoryless  property')
+    } else{
+      print('Geometric  distribution does not have memoryless  property')
+    }
+  } else if (type == 'Poisson') {
+    if (round((1 - ppois(m + n, p)), 4) == round(((1 - ppois(m, p)) *
+                                                  (1 - ppois(n, p))), 4)) {
+      print('Poisson  distribution has memoryless  property')
+    } else{
+      print('Poisson  distribution does not have memoryless  property')
+    }
+  }
+}
+```
+```{r}
+memoryless_1(5, 7, 0.2, 'Geometric')
+memoryless_1(11, 103, 0.4, 'Geometric')
+memoryless_1(75, 49, 0.6, 'Geometric')
+memoryless_1(5, 7, 3, 'Poisson')
+memoryless_1(11, 13, 7, 'Poisson')
+memoryless_1(9, 40, 21, 'Poisson')
+```
+
+- method 2 (simulation method)
+```{r}
+# p: p or lambda; T: simulation times; k: number of x per time; type: geometric or poisson
+memoryless_2 <- function(p, T, k, type) {
+  result <- matrix(rep(0, 4 * T), T, 4)
+  for (t in 1:T) {
+    if (type == "geometric") {
+      x <- rgeom(k, p)
+    } else if (type == "Poisson") {
+      x <- rpois(k, p)
+    }
+    # in order to get a good simulation, m and n are selected as follows
+    m <-
+      round(runif(1, min = mean(x) - sd(x), max = mean(x) + sd(x)))
+    n <-
+      round(runif(1, min = mean(x) - sd(x), max = mean(x) + sd(x)))
+    if (type == "geometric") {
+      p_condition <- length(x[x > m + n + 1]) / length(x[x > m])
+    } else if (type == "Poisson") {
+      p_condition <- length(x[x > m + n]) / length(x[x > m])
+    }
+    p2 <- length(x[x > n]) / length(x)
+    result[t,] <- c(p_condition, p2, m, n)
+  }
+  result <- data.frame(result)
+  colnames(result) <- c("Pr(X > m+n|X > m)", "Pr(X > n)", "m", "n")
+  return(result)
+}
+```
+```{r}
+memoryless_2(0.5, 10, 10000, "geometric")
+memoryless_2(0.1, 10, 10000, "geometric")
+memoryless_2(0.01, 10, 10000, "geometric")
+```
+
+From the result, we can see that geometric distribution has memoryless property. 
+```{r}
+memoryless_2(1, 10, 10000, "Poisson")
+memoryless_2(5, 10, 10000, "Poisson")
+memoryless_2(10, 10, 10000, "Poisson")
+memoryless_2(50, 10, 10000, "Poisson")
+```
+From the result, Poisson distribution does not have memoryless property.
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
