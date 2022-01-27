@@ -1,7 +1,7 @@
 # Assignments for some courses in statistics major of SUSTech 
 
 ## Mathematical Statistics
-Textbook: Tian GL, Jiang XJ. (2020). *Mathematical Statistics*. Science Press, Beijing, P.R. China.
+<u>Textbook</u>: Tian GL, Jiang XJ. (2020). *Mathematical Statistics*. Science Press, Beijing, P.R. China.
 
 ISBN: 9787030670007
 
