@@ -2,6 +2,7 @@
 
 ## Mathematical Statistics
 Textbook: Tian GL, Jiang XJ. (2020). *Mathematical Statistics*. Science Press, Beijing, P.R. China.
+
 ISBN: 9787030670007
 
 ## Time Series Analysis
