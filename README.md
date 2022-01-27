@@ -1,9 +1,9 @@
 # Assignments for some courses in statistics major of SUSTech 
 
 ## Mathematical Statistics
-<u>Textbook</u>: Tian GL, Jiang XJ. (2020). *Mathematical Statistics*. Science Press, Beijing, P.R. China.
+**Textbook**: Tian GL, Jiang XJ. (2020). *Mathematical Statistics*. Science Press, Beijing, P.R. China.
 
-ISBN: 9787030670007
+**ISBN**: 9787030670007
 
 ## Time Series Analysis
 Textbook: Cryer, J. D., & Chan, K. S. (2008). *Time series analysis: with applications in R* (Vol. 2). New York: Springer.
